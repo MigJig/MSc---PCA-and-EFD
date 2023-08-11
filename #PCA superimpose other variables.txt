@@ -1,0 +1,59 @@
+#variables
+variableDataset<-read.csv("C:/Users/Mig/Documents/UNI/PASSIFLORA/script/variableDataset.csv", header=T, row.names=1)
+
+#impute
+sum(is.na(variableDataset))/sum(is.na(variableDataset)+!is.na(variableDataset))*100
+estim_all.q<-estim_ncpPCA(variableDataset [, -c(4, 5, 6, 7, 8, 9, 10)], ncp.min = 0, ncp.max = 5, scale = TRUE, method.cv ="gcv", nbsim = 100, pNA = 0.05, threshold=1e-4)
+midwayTypeDataset<-imputePCA(variableDataset [, -c(4, 5, 6, 7, 8, 9, 10)], ncp = estim_all.q$ncp, scale = TRUE, method = "Regularized")
+completefinalDataset<-midwayTypeDataset$completeObs
+sum(is.na(completefinalDataset))/sum(is.na(completefinalDataset)+!is.na(completefinalDataset))*100
+
+#scale
+library(dplyr)
+# Standardization function
+standardize <- function(x) {
+  return((x - mean(x)) / sd(x))}
+# Scale the dataset using standardization
+scaledFinalDataset <- as.data.frame(lapply(as.data.frame(completefinalDataset [,-5]),  standardize))
+# Check the scaled dataset
+head(scaledFinalDataset)
+scaledFinalDataset$Type_of <- variableDataset$Type_of
+scaledFinalDataset$InD <- variableDataset$InD
+scaledFinalDataset$PeIn <- variableDataset$PeIn
+scaledFinalDataset$LAdIn <- variableDataset$LAdIn
+scaledFinalDataset$LAdInT <- variableDataset$LAdInT
+scaledFinalDataset$LAd.ab <- variableDataset$LAd.ab
+scaledFinalDataset$LGS <- variableDataset$LGS
+rownames(scaledFinalDataset) <- rownames(variableDataset)
+
+pcaFinalDataset <- dudi.pca(scaledFinalDataset[, -c(4, 5, 6, 7, 8, 9, 10)], nf = 3, scannf = FALSE, center = TRUE, scale = TRUE)
+
+#inflor
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "Inflorescenes Dicotomy", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$InD, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16,16)) + scale_colour_manual(values=c("#E69F00", "black", "#808080")) + theme(legend.position="top")
+print(P)
+
+#petiole ind
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "Petiole Indumentum", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$PeIn, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16,16)) + scale_colour_manual(values=c("#E69F00", "black", "#808080")) + theme(legend.position="top")
+print(P)
+
+#leaf adaxial indumentum
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "leaf adaxial indumentum", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$LAdIn, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16,16)) + scale_colour_manual(values=c("#E69F00", "black", "#808080")) + theme(legend.position="top")
+print(P)
+
+#leaf adaxial indumentum type 
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "leaf adaxial indumentum type", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$LAdInT, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16,16,16)) + scale_colour_manual(values=c("#E69F00", "black", "#808080", "#56B4E9")) + theme(legend.position="top")
+print(P)
+
+# Difference in leaf adaxial/ abaxial surface colour DOESNT WORK - name
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "Difference in leaf adaxial/ abaxial surface colour", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$LAd.ab, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16)) + scale_colour_manual(values=c("#E69F00", "#808080")) + theme(legend.position="top")
+print(P)
+
+#gland shape
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "Gland shape", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$LGS, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,16,16,16)) + scale_colour_manual(values=c("#E69F00", "black", "#808080", "#56B4E9")) + theme(legend.position="top")
+print(P)

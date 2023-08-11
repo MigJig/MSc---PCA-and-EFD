@@ -1,0 +1,122 @@
+#packages
+library(Momocs)
+library(dplyr)
+library(magrittr)
+library(tidyverse)
+library(sys)
+library(ps)
+library(rematch)
+library(askpass)
+library(processx)
+library(backports)
+library(assertthat)
+library(gargle)
+library(cellranger)
+library(curl)
+library(ids)
+library(rematch2)
+library(cpp11)
+library(openssl)
+library(timechange)
+library(clipr)
+library(vroom)
+library(tzdb)
+library(callr)
+library(selectr)
+library(broom)
+library(dbplyr)
+library(dtplyr)
+library(forcats)
+library(googledrive)
+library(googlesheets4)
+library(haven)
+library(httr)
+library(lubridate)
+library(modelr)
+library(purrr)
+library(readr)
+library(readxl)
+library(reprex)
+library(rstudioapi)
+library(rvest)
+library(tidyr)
+library(xml2)
+library(dplyr)
+library(forcats)
+
+#need folder of JPEG, 8-bit binary images
+firstlist <- list.files('C:/Users/Mig/Documents//UNI/PASSIFLORA/specimens/types/tiffs/leaves/jpegs', full.names = TRUE)
+
+#extracting outlines
+allSpecies <- import_jpg(firstlist)
+coordsAll = Out(allSpecies)
+coordsAll %>% coo_center %>% coo_scale %>% coo_alignxax %>% coo_slidedirection ("left") %T>% print () %>% pile()
+
+#coloured outline
+setwd ('C:/Users/Mig/Documents//UNI/PASSIFLORA/specimens/types/tiffs/table')
+
+three_df = read.table("table_types.txt", header=TRUE, sep = "\t")
+three_df1 <- three_df %>% mutate(across(where(is.character), as_factor))
+coordsAll = Out(allSpecies, fac=three_df1)
+panel(coordsAll, fac="species", names=TRUE)
+
+
+#actual figure
+calibrate_harmonicpower_efourier(coordsAll)
+calibrate_deviations_efourier(coordsAll)
+calibrate_reconstructions_efourier(coordsAll, range=1:12)
+three_species.f <- efourier(coordsAll, nb.h=15, norm=TRUE)
+three_species.f
+boxplot(three_species.f, drop=1)
+
+
+#axis1 and 2 
+three_species.pca <- PCA(three_species.f)
+three_species_PCA <- plot(
+ three_species.pca,
+ fac = "species",
+ xax = 1,
+ yax = 2,
+ points = TRUE,
+ pch = 20,
+col = c("#56B4E9", "#F0E442", "#009E73", "#999999", "#000000")[three_species_PCA$fac],
+ cex = 1.5,
+ center.origin = FALSE,
+ zoom = 1,
+ xlim = NULL,
+ ylim = NULL,
+ title = "PCA Momocs",
+ grid = TRUE,
+ nb.grids = 3,
+ morphospace = TRUE, labelsgroups=FALSE, legend=TRUE, legend.text, eigen=FALSE)
+
+#axis 3 and 4 - ignore/ not needed.
+three_species_PCA <- plot(
+ three_species.pca,
+ fac="species",
+ xax = 3,
+ yax = 4,
+ points = TRUE,
+ pch = 20,
+ cex = 0.5,
+ center.origin = FALSE,
+ zoom = 1,
+ xlim = NULL,
+ ylim = NULL,
+ title = "",
+ grid = TRUE,
+ nb.grids = 3,
+ morphospace = TRUE)
+
+#axis explained - needed in figures
+summary(three_species.pca)
+three_species.pca$rotation[,1:2]
+PCcontrib(three_species.pca, nax=1:4)
+
+#mean shapes figure
+three_species.f %>% MSHAPES() %>% coo_plot()
+mean.shapes <- MSHAPES(three_species.f, ~species)
+Out(mean.shapes$shp) %>% panel(borders=10, names=TRUE, lwd=15)
+
+stack(coordsAll)
+stack(coo_all, fac='species')

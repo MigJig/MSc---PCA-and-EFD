@@ -1,0 +1,89 @@
+#dataset = allDataset
+#if data wont input 
+allDataset<-read.csv("C:/Users/Mig/Documents/UNI/PASSIFLORA/script/allDataset.csv", header=T, row.names=1)
+
+#packages
+library(tidyverse)
+library(mclust)
+library(NbClust)
+library(ade4)
+library(factoextra)
+library(dendextend)
+library(PerformanceAnalytics)
+library(rpart)
+library(rpart.plot)
+library(MASS)
+library(colorspace)
+library(FD)
+library(vegan)
+library(missMDA)
+library(ggfortify)
+
+#IMPUTE missing data
+sum(is.na(allDataset))/sum(is.na(allDataset)+!is.na(allDataset))*100
+#impute
+estim_all.q<-estim_ncpPCA(allDataset [,-14], ncp.min = 0, ncp.max = 14, scale = TRUE, method.cv ="gcv", nbsim = 100, pNA = 0.05, threshold=1e-4)
+midwayTypeDataset<-imputePCA(allDataset [,-14], ncp = estim_all.q$ncp, scale = TRUE, method = "Regularized")
+completeAllDataset<-midwayTypeDataset$completeObs
+sum(is.na(completeAllDataset))/sum(is.na(completeAllDataset)+!is.na(completeAllDataset))*100
+
+#scaling
+#scalelibrary(dplyr)
+# Standardization function
+standardize <- function(x) {
+  return((x - mean(x)) / sd(x))}
+# Scale the dataset using standardization
+scaledAllDataset <- as.data.frame(lapply(as.data.frame(completeAllDataset [,-14]),  standardize))
+# Check the scaled dataset
+head(scaledAllDataset)
+scaledAllDataset$Type_of <- allDataset$Type_of
+rownames(scaledAllDataset) <- rownames(completeAllDataset)
+
+#pca 
+pcaAllDataset <- dudi.pca(scaledAllDataset [,-14], nf = 3, scannf = FALSE, center = TRUE, scale = TRUE)
+
+#COS2 VALUES/ LINEAR R2VALUES 
+fviz_cos2(pcaAllDataset, choice = "var", axes = 1:2)
+#linear check! (0.6 cut off) - get rid of variable out of the 2 with lowest cos2 value
+round(cor(completeAllDataset), digits = 2)
+
+
+#INPUT NEW DATABASE WITHOUT THE EXTRA VARIABLES (finalDataset.csv)
+sum(is.na(finalDataset))/sum(is.na(finalDataset)+!is.na(finalDataset))*100
+#impute
+estim_all.q<-estim_ncpPCA(finalDataset [,-4], ncp.min = 0, ncp.max = 5, scale = TRUE, method.cv ="gcv", nbsim = 100, pNA = 0.05, threshold=1e-4)
+midwayTypeDataset<-imputePCA(finalDataset [,-4], ncp = estim_all.q$ncp, scale = TRUE, method = "Regularized")
+completefinalDataset<-midwayTypeDataset$completeObs
+sum(is.na(completefinalDataset))/sum(is.na(completefinalDataset)+!is.na(completefinalDataset))*100
+
+#scale
+library(dplyr)
+# Standardization function
+standardize <- function(x) {
+  return((x - mean(x)) / sd(x))}
+# Scale the dataset using standardization
+scaledFinalDataset <- as.data.frame(lapply(as.data.frame(completefinalDataset [,-4]),  standardize))
+# Check the scaled dataset
+head(scaledFinalDataset)
+scaledFinalDataset$Type_of <- finalDataset$Type_of
+rownames(scaledFinalDataset) <- rownames(finalDataset)
+
+pcaFinalDataset <- dudi.pca(scaledFinalDataset[, -4], nf = 3, scannf = FALSE, center = TRUE, scale = TRUE)
+
+
+#types- #12ECB1
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), label="none", legend.title = "Species", pointsize= 4, habillage=scaledFinalDataset$Type_of) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(1,18,18,18,18)) + scale_colour_manual(values=c("#999999", "black", "#56B4E9", "#009E73", "#F0E442")) + theme(legend.position="top")
+print(P)
+
+#specimens 
+P <- fviz_pca_ind(pcaFinalDataset, axes = c(1,2), legend.title = "Species", pointsize= 4, labelsize= 2, habillage=scaledFinalDataset$Type_of, repel=TRUE, mean.point=F) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,18,5,5,5)) + scale_colour_manual(values=c("#E69F00", "black", "#808080", "#808080", "#808080")) + theme(legend.position="top")
+print(P)
+
+#variables 
+P <-fviz_pca_biplot(pcaFinalDataset, axes = c(1,2), label="var",  pointsize= 3, habillage=scaledFinalDataset$Type_of, mean.point=F, col.var="black",) + labs(title='PCA Axes 1 and 2') +xlim(-3,5) + ylim (-3,5)
+P + scale_shape_manual(values=c(16,18,5,5,5)) + scale_colour_manual(values=c("#E69F00", "black", "#808080", "#808080", "#808080")) + theme(legend.position="top")
+print(P)
+
+
